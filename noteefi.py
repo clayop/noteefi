@@ -6,7 +6,7 @@ from websocket import create_connection
 import pymongo
 from pymongo import MongoClient
 
-telegram_token = "botstelegramtoken"
+telegram_token = "BOTS_TELEGRAM_TOKEN_ID_HERE"
 mon_pending = []
 sub_pending = []
 unmon_pending = []
@@ -23,10 +23,10 @@ def telegram(method, params=None):
 def ck(chat_id):
     custom_keyboard = []
     if chat_id in monitor_list:
-        if len(monitor_list[chat_id]) < 5:
+        if len(monitor_list[chat_id]) < 20:
             custom_keyboard.append(["/monitor_account"])
     if chat_id in subscribe_list:
-        if len(subscribe_list[chat_id]) < 5:
+        if len(subscribe_list[chat_id]) < 20:
             custom_keyboard.append(["/subscribe_category"])
     if chat_id in monitor_list:
         if len(monitor_list[chat_id]) > 0:
@@ -80,7 +80,7 @@ def update_db(last):
                 m = telegram("sendMessage", {"chat_id":chat_id, "text":msg})
             elif cmd == "/monitor_account":
                 try:
-                    if len(monitor_list[chat_id]) >= 5:
+                    if len(monitor_list[chat_id]) >= 20:
                         m = telegram("sendMessage", {"chat_id":chat_id, "text":"You have reached maximum number of monitoring"})
                     else:
                         m = telegram("sendMessage", {"chat_id":chat_id, "text":"Enter account to monitor"})
@@ -90,7 +90,7 @@ def update_db(last):
                     mon_pending.append(chat_id)
             elif cmd == "/subscribe_category":
                 try:
-                    if len(subscribe_list[chat_id]) >= 5:
+                    if len(subscribe_list[chat_id]) >= 20:
                         m = telegram("sendMessage", {"chat_id":chat_id, "text":"You have reached maximum number of subscription"})
                     else:
                         m = telegram("sendMessage", {"chat_id":chat_id, "text":"Enter category to subscribe"})
@@ -266,60 +266,54 @@ if __name__ == '__main__':
                     for o in range(len(tx[i]["operations"])):
                         op = tx[i]["operations"][o]
                         if op[0] == "comment":
-                            if op[1]["parent_author"] == "":
-                                for j in monitor_id:
-                                    if op[1]["author"] == j and op[1]["body"][0:2] != "@@":
-                                        author = op[1]["author"]
-                                        title = op[1]["title"][0:100]
-                                        plink = op[1]["permlink"]
-                                        msg = "New post by *"+ j +"*\nTitle: [" + title +"](https://steemit.com/" + j + "/@" + author + "/" + plink + ")"
-                                        for t in monitor_id[j]:
-                                            payload = {"chat_id":t, "text":msg, "parse_mode":"Markdown", "disable_web_page_preview":True}
-                                            telegram("sendMessage", payload)
-                                for j in subscribe_id:
-                                    if (op[1]["parent_permlink"] == j or (j[-1] == "*" and op[1]["parent_permlink"][0:(len(j)-1)] == j[0:-1])) and op[1]["body"][0:2] != "@@":
-                                        author = op[1]["author"]
-                                        title = op[1]["title"][0:100]
-                                        plink = op[1]["permlink"]
-                                        msg = "New post in _"+ op[1]["parent_permlink"] +"_\nAuthor: "+ author +"\nTitle: [" + title +"](https://steemit.com/" + op[1]["parent_permlink"] + "/@" + author + "/" + plink + ")"
-                                        for t in subscribe_id[j]:
-                                            payload = {"chat_id":t, "text":msg, "parse_mode":"Markdown", "disable_web_page_preview":True}
-                                            telegram("sendMessage", payload)
-                            else:
-                                for j in monitor_id.keys():
+                            for j in monitor_id:
+                                if str("@"+j) in op[1]["body"]:
+                                    author = op[1]["author"]
+                                    plink = op[1]["permlink"]
+                                    title = op[1]["title"]
+                                    parent_author = op[1]["parent_author"]
+                                    parent_permlink = op[1]["parent_permlink"]
+                                    if title == "":
+                                        url = "https://steemit.com/%s/@%s/%s" % (parent_permlink, author, plink)
+                                        msg = "*%s* is mentioned by %s in a post\n[%s](%s)" % (j, author, title, url)
+                                    else:
+                                        tag = json.loads(op[1]["json_metadata"])["tags"][0]
+                                        url = "https://steemit.com/%s/@%s/%s#@%s/%s" % (tag, parent_author, parent_permlink, author, plink)
+                                        msg = "*%s* is mentioned by %s in [a comment](%s)\n%s" % (j, author, url, op[1]["body"][0:4000])
+                                    for t in monitor_id[j]:
+                                        payload = {"chat_id":t, "text":msg, "parse_mode":"Markdown", "disable_web_page_preview":True}
+                                        telegram("sendMessage", payload)
+                                if op[1]["title"] == "":
                                     if op[1]["parent_author"] == j and op[1]["body"][0:2] != "@@":
                                         author = op[1]["author"]
-                                        parent_permlink = op[1]["parent_permlink"]
+                                        plink = op[1]["permlink"]
                                         parent_author = op[1]["parent_author"]
-                                        sub = json.dumps({"jsonrpc": "2.0", "id": wid, "method": "call", "params": [0, "get_content", [parent_author, parent_permlink]]})
-                                        send = ws.send(sub)
-                                        wid += 1
-                                        url = json.loads(ws.recv())["result"]["url"]
-                                        msg = "New comment by " + author + " on *" + j + "*'s [post/comment](https://steemit.com" + url +")\n" + op[1]["body"][0:140]
+                                        parent_permlink = op[1]["parent_permlink"]
+                                        tag = json.loads(op[1]["json_metadata"])["tags"][0]
+                                        url = "https://steemit.com/%s/@%s/%s#@%s/%s" % (tag, j, parent_permlink, author, plink)
+                                        msg = "New comment by %s on *%s*'s [post/comment](%s)\n%s" % (author, j, url, op[1]["body"][0:4000])
                                         for t in monitor_id[j]:
                                             payload = {"chat_id":t, "text":msg, "parse_mode":"Markdown", "disable_web_page_preview":True}
                                             telegram("sendMessage", payload)
-                        elif op[0] == "vote":
-                            for j in monitor_id.keys():
-                                if op[1]["author"] == j:
-                                    sub = json.dumps({"jsonrpc": "2.0", "id": wid, "method": "call", "params": [0, "get_content", [j, op[1]["permlink"]]]})
-                                    send = ws.send(sub)
-                                    wid += 1
-                                    res = json.loads(ws.recv())["result"]
-                                    title = res["permlink"][0:100]
-                                    url = res["url"]
-                                    sbd = res["pending_payout_value"].split()[0]
-                                    if float(sbd) < 0 or float(sbd) > 10**8:
-                                        sbd = "0.000"
-                                    for t in monitor_id[j]:
-                                        if op[1]["weight"] > 0:
-                                            msg = op[1]["voter"]+" upvoted *" + j + "*'s [post/comment](https://steemit.com" + url + ")\nPayout: $" + sbd
-                                            payload = {"chat_id":t, "text":msg, "parse_mode":"Markdown", "disable_web_page_preview":True}
+                                else:
+                                    if op[1]["author"] == j and op[1]["body"][0:2] != "@@":
+                                        author = op[1]["author"]
+                                        plink = op[1]["permlink"]
+                                        parent_permlink = op[1]["parent_permlink"]
+                                        msg = "[New post](https://steemit.com/%s/@%s/%s) by *%s*" % (parent_permlink, j, plink, j)
+                                        for t in monitor_id[j]:
+                                            payload = {"chat_id":t, "text":msg, "parse_mode":"Markdown"}
                                             telegram("sendMessage", payload)
-                                        else:
-                                            msg = op[1]["voter"]+" downvoted *" + j + "*'s [post/comment](https://steemit.com" + url + ")\nPayout: $" + sbd
-                                            payload = {"chat_id":t, "text":msg, "parse_mode":"Markdown", "disable_web_page_preview":True}
-                                            telegram("sendMessage", payload)
+                            for j in subscribe_id:
+                                if (op[1]["parent_permlink"] == j or (j[-1] == "*" and op[1]["parent_permlink"][0:(len(j)-1)] == j[0:-1])) and op[1]["body"][0:2] != "@@":
+                                    author = op[1]["author"]
+                                    title = op[1]["title"]
+                                    plink = op[1]["permlink"]
+                                    msg = "New post in _%s_\nAuthor: %s\nTitle: [%s](https://steemit.com/%s/@/%s/%s)" % (op[1]["parent_permlink"], author, title, op[1]["parent_permlink"], author, plink)
+                                    for t in subscribe_id[j]:
+                                        payload = {"chat_id":t, "text":msg, "parse_mode":"Markdown", "disable_web_page_preview":True}
+                                        telegram("sendMessage", payload)
+
             block += 1
             coll_block.update_one({"block":block-1}, {"$set":{"block":block}})
             try:
