@@ -279,7 +279,7 @@ if __name__ == '__main__':
                                             url = "https://steemit.com/%s/@%s/%s#@%s/%s" % (tag, parent_author, parent_permlink, author, plink)
                                             msg = "*%s* is mentioned by %s in [a comment](%s)\n%s" % (j, author, url, op[1]["body"][0:4000])
                                         except:
-                                            msg = "*%s* is mentioned by %s in a comment\n%s" % (j, author, url, op[1]["body"][0:4000]) 
+                                            msg = "*%s* is mentioned by %s in a comment\n%s" % (j, author, op[1]["body"][0:4000]) 
                                     else:
                                         url = "https://steemit.com/%s/@%s/%s" % (parent_permlink, author, plink)
                                         msg = "*%s* is mentioned by %s in a post\n[%s](%s)" % (j, author, title, url)
