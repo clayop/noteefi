@@ -315,7 +315,7 @@ if __name__ == '__main__':
                                     author = op[1]["author"]
                                     title = op[1]["title"]
                                     plink = op[1]["permlink"]
-                                    msg = "New post in _%s_\nAuthor: %s\nTitle: [%s](https://steemit.com/%s/@/%s/%s)" % (op[1]["parent_permlink"], author, title, op[1]["parent_permlink"], author, plink)
+                                    msg = "New post in _%s_\nAuthor: %s\nTitle: [%s](https://steemit.com/%s/@%s/%s)" % (op[1]["parent_permlink"], author, title, op[1]["parent_permlink"], author, plink)
                                     for t in subscribe_id[j]:
                                         payload = {"chat_id":t, "text":msg, "parse_mode":"Markdown", "disable_web_page_preview":True}
                                         telegram("sendMessage", payload)
