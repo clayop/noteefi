@@ -277,9 +277,12 @@ if __name__ == '__main__':
                                         url = "https://steemit.com/%s/@%s/%s" % (parent_permlink, author, plink)
                                         msg = "*%s* is mentioned by %s in a post\n[%s](%s)" % (j, author, title, url)
                                     else:
-                                        tag = json.loads(op[1]["json_metadata"])["tags"][0]
-                                        url = "https://steemit.com/%s/@%s/%s#@%s/%s" % (tag, parent_author, parent_permlink, author, plink)
-                                        msg = "*%s* is mentioned by %s in [a comment](%s)\n%s" % (j, author, url, op[1]["body"][0:4000])
+                                        try:
+                                            tag = json.loads(op[1]["json_metadata"])["tags"][0]
+                                            url = "https://steemit.com/%s/@%s/%s#@%s/%s" % (tag, parent_author, parent_permlink, author, plink)
+                                            msg = "*%s* is mentioned by %s in [a comment](%s)\n%s" % (j, author, url, op[1]["body"][0:4000])
+                                        except:
+                                            msg = "*%s* is mentioned by %s in a comment\n%s" % (j, author, url, op[1]["body"][0:4000]) 
                                     for t in monitor_id[j]:
                                         payload = {"chat_id":t, "text":msg, "parse_mode":"Markdown", "disable_web_page_preview":True}
                                         telegram("sendMessage", payload)
@@ -289,9 +292,12 @@ if __name__ == '__main__':
                                         plink = op[1]["permlink"]
                                         parent_author = op[1]["parent_author"]
                                         parent_permlink = op[1]["parent_permlink"]
-                                        tag = json.loads(op[1]["json_metadata"])["tags"][0]
-                                        url = "https://steemit.com/%s/@%s/%s#@%s/%s" % (tag, j, parent_permlink, author, plink)
-                                        msg = "New comment by %s on *%s*'s [post/comment](%s)\n%s" % (author, j, url, op[1]["body"][0:4000])
+                                        try:
+                                            tag = json.loads(op[1]["json_metadata"])["tags"][0]
+                                            url = "https://steemit.com/%s/@%s/%s#@%s/%s" % (tag, j, parent_permlink, author, plink)
+                                            msg = "New comment by %s on *%s*'s [post/comment](%s)\n%s" % (author, j, url, op[1]["body"][0:4000])
+                                        except:
+                                            msg = "New comment by %s on *%s*'s post/comment\n%s" % (author, j, op[1]["body"][0:4000])
                                         for t in monitor_id[j]:
                                             payload = {"chat_id":t, "text":msg, "parse_mode":"Markdown", "disable_web_page_preview":True}
                                             telegram("sendMessage", payload)
