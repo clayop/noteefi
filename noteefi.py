@@ -17,8 +17,14 @@ tpslist = []
 def telegram(method, params=None):
     url = "https://api.telegram.org/bot"+telegram_token+"/"
     params = params
-    r = requests.get(url+method, params = params).json()
-    return r
+    trial = 0
+    while trial <= 3:
+        try:
+            r = requests.get(url+method, params = params).json()
+            return r
+        except:
+            trial += 1
+            time.sleep(3)
 
 def ck(chat_id):
     custom_keyboard = []
@@ -263,29 +269,33 @@ if __name__ == '__main__':
                 tx = res["result"]["transactions"]
                 ntx = len(tx)
                 for i in range(ntx):
-                    for o in range(len(tx[i]["operations"])):
+                    nop = len(tx[i]["operations"])
+                    for o in range(nop):
                         op = tx[i]["operations"][o]
                         if op[0] == "comment":
                             for j in monitor_id:
-                                if str("@"+j) in op[1]["body"]:
+                                if str("@"+j) in op[1]["body"] and op[1]["body"][0:2] != "@@":
                                     author = op[1]["author"]
                                     plink = op[1]["permlink"]
                                     title = op[1]["title"]
                                     parent_author = op[1]["parent_author"]
                                     parent_permlink = op[1]["parent_permlink"]
-                                    if title == "":
-                                        try:
-                                            tag = json.loads(op[1]["json_metadata"])["tags"][0]
-                                            url = "https://steemit.com/%s/@%s/%s#@%s/%s" % (tag, parent_author, parent_permlink, author, plink)
-                                            msg = "*%s* is mentioned by %s in [a comment](%s)\n%s" % (j, author, url, op[1]["body"][0:4000])
-                                        except:
-                                            msg = "*%s* is mentioned by %s in a comment\n%s" % (j, author, op[1]["body"][0:4000]) 
+                                    if author[0:8] == "linkback":
+                                        pass
                                     else:
-                                        url = "https://steemit.com/%s/@%s/%s" % (parent_permlink, author, plink)
-                                        msg = "*%s* is mentioned by %s in a post\n[%s](%s)" % (j, author, title, url)
-                                    for t in monitor_id[j]:
-                                        payload = {"chat_id":t, "text":msg, "parse_mode":"Markdown", "disable_web_page_preview":True}
-                                        telegram("sendMessage", payload)
+                                        if title == "":
+                                            try:
+                                                tag = json.loads(op[1]["json_metadata"])["tags"][0]
+                                                url = "https://steemit.com/%s/@%s/%s#@%s/%s" % (tag, parent_author, parent_permlink, author, plink)
+                                                msg = "*%s* is mentioned in %s's'[comment](%s)\n%s" % (j, author, url, op[1]["body"][0:4000])
+                                            except:
+                                                msg = "*%s* is mentioned in %s's'comment\n%s" % (j, author, op[1]["body"][0:4000]) 
+                                        else:
+                                            url = "https://steemit.com/%s/@%s/%s" % (parent_permlink, author, plink)
+                                            msg = "*%s* is mentioned in %s's'post\n[%s](%s)" % (j, author, title, url)
+                                        for t in monitor_id[j]:
+                                            payload = {"chat_id":t, "text":msg, "parse_mode":"Markdown", "disable_web_page_preview":True}
+                                            telegram("sendMessage", payload)
                                 if op[1]["title"] == "":
                                     if op[1]["parent_author"] == j and op[1]["body"][0:2] != "@@":
                                         author = op[1]["author"]
