@@ -268,10 +268,8 @@ if __name__ == '__main__':
             if res["result"]["transactions"] != []:
                 tx = res["result"]["transactions"]
                 ntx = len(tx)
-                for i in range(ntx):
-                    nop = len(tx[i]["operations"])
-                    for o in range(nop):
-                        op = tx[i]["operations"][o]
+                for i in tx:
+                    for op in i["operations"]:
                         if op[0] == "comment":
                             for j in monitor_id:
                                 if str("@"+j) in op[1]["body"] and op[1]["body"][0:2] != "@@":
