@@ -272,28 +272,30 @@ if __name__ == '__main__':
                     for op in i["operations"]:
                         if op[0] == "comment":
                             for j in monitor_id:
-                                if str("@"+j) in op[1]["body"] and op[1]["body"][0:2] != "@@":
-                                    author = op[1]["author"]
-                                    plink = op[1]["permlink"]
-                                    title = op[1]["title"]
-                                    parent_author = op[1]["parent_author"]
-                                    parent_permlink = op[1]["parent_permlink"]
-                                    if author[0:8] == "linkback":
-                                        pass
-                                    else:
-                                        if title == "":
-                                            try:
-                                                tag = json.loads(op[1]["json_metadata"])["tags"][0]
-                                                url = "https://steemit.com/%s/@%s/%s#@%s/%s" % (tag, parent_author, parent_permlink, author, plink)
-                                                msg = "*%s* is mentioned in %s's'[comment](%s)\n%s" % (j, author, url, op[1]["body"][0:4000])
-                                            except:
-                                                msg = "*%s* is mentioned in %s's'comment\n%s" % (j, author, op[1]["body"][0:4000]) 
+                                spec_char = [" ", ",", ";", ":"]
+                                for k in spec_char:
+                                    if str("@"+j+k) in op[1]["body"] and op[1]["body"][0:2] != "@@":
+                                        author = op[1]["author"]
+                                        plink = op[1]["permlink"]
+                                        title = op[1]["title"]
+                                        parent_author = op[1]["parent_author"]
+                                        parent_permlink = op[1]["parent_permlink"]
+                                        if author[0:8] == "linkback":
+                                            pass
                                         else:
-                                            url = "https://steemit.com/%s/@%s/%s" % (parent_permlink, author, plink)
-                                            msg = "*%s* is mentioned in %s's'post\n[%s](%s)" % (j, author, title, url)
-                                        for t in monitor_id[j]:
-                                            payload = {"chat_id":t, "text":msg, "parse_mode":"Markdown", "disable_web_page_preview":True}
-                                            telegram("sendMessage", payload)
+                                            if title == "":
+                                                try:
+                                                    tag = json.loads(op[1]["json_metadata"])["tags"][0]
+                                                    url = "https://steemit.com/%s/@%s/%s#@%s/%s" % (tag, parent_author, parent_permlink, author, plink)
+                                                    msg = "*%s* is mentioned in %s's [comment](%s)\n%s" % (j, author, url, op[1]["body"][0:4000])
+                                                except:
+                                                    msg = "*%s* is mentioned in %s's comment\n%s" % (j, author, op[1]["body"][0:4000]) 
+                                            else:
+                                                url = "https://steemit.com/%s/@%s/%s" % (parent_permlink, author, plink)
+                                                msg = "*%s* is mentioned in %s's'post\n[%s](%s)" % (j, author, title, url)
+                                            for t in monitor_id[j]:
+                                                payload = {"chat_id":t, "text":msg, "parse_mode":"Markdown", "disable_web_page_preview":True}
+                                                telegram("sendMessage", payload)
                                 if op[1]["title"] == "":
                                     if op[1]["parent_author"] == j and op[1]["body"][0:2] != "@@":
                                         author = op[1]["author"]
